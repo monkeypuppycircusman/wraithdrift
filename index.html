@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WRAITH DRIFT — Phonk Pad</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&display=swap');
+
+:root {
+  --void:   #03020a;
+  --deep:   #07050f;
+  --murk:   #0d0a1a;
+  --fog:    #151028;
+  --mist:   #1e1830;
+  --ecto:   #7affcc;
+  --ecto2:  #a8ffe0;
+  --soul:   #c060ff;
+  --soul2:  #e090ff;
+  --drift:  #a060ff;
+  --drift2: #c898ff;
+  --drift3: #e8d0ff;
+  --phonk:  #ff3060;
+  --phonk2: #ff7090;
+  --tape:   #c8a040;
+  --tape2:  #e8c870;
+  --ghost:  #304878;
+  --ghost2: #486898;
+  --text:   #8a8598;
+  --text2:  #504860;
+  --text3:  #2a2438;
+  --mono:  'DM Mono', monospace;
+  --serif: 'Cormorant Garamond', serif;
+  --goth:  'UnifrakturMaguntia', cursive;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  background: var(--void);
+  overflow: hidden;
+  font-family: var(--mono);
+  cursor: none;
+}
+
+#cursor {
+  position: fixed; width: 22px; height: 22px;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+}
+#cursor svg { width: 100%; height: 100%; }
+
+#atmos { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+#app {
+  position: relative; width: 100vw; height: 100vh;
+  display: flex; flex-direction: column; z-index: 1;
+}
+
+/* ── HEADER ── */
+#hdr {
+  flex-shrink: 0; padding: 18px 28px 14px;
+  display: flex; align-items: baseline; gap: 18px;
+  border-bottom: 1px solid var(--text3);
+  background: linear-gradient(180deg, rgba(7,5,15,.97) 0%, transparent 100%);
+  position: relative; z-index: 2;
+}
+#logo {
+  font-family: var(--goth); font-size: 36px;
+  color: var(--drift);
+  text-shadow: 0 0 22px var(--drift), 0 0 70px rgba(160,96,255,.22);
+  letter-spacing: 4px; line-height: 1;
+}
+#logo-sub {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 3px;
+  color: var(--text3); text-transform: uppercase;
+}
+#hdr-stats { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.hstat { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; color: var(--text3); text-transform: uppercase; }
+.hstat span { color: var(--text2); transition: color .1s; }
+.hstat span.lit       { color: var(--drift2); text-shadow: 0 0 8px var(--drift); }
+.hstat span.lit-phonk { color: var(--phonk2); text-shadow: 0 0 8px var(--phonk); }
+.hstat span.lit-tape  { color: var(--tape2);  text-shadow: 0 0 8px var(--tape); }
+#power-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); transition: all .3s; }
+#power-dot.on { background: var(--drift); box-shadow: 0 0 8px var(--drift), 0 0 24px rgba(160,96,255,.5); }
+
+/* ── MAIN ── */
+#main { flex: 1; display: flex; overflow: hidden; position: relative; }
+#main::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(160,96,255,.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160,96,255,.012) 1px, transparent 1px);
+  background-size: 65px 52px; pointer-events: none;
+}
+
+/* ── LEFT: KEYBOARD + PADS ── */
+#left-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 16px 16px 0; gap: 10px;
+  position: relative; z-index: 1; overflow: hidden;
+}
+
+/* ── CHOIR VISUALIZER ── */
+#choir-vis {
+  width: 100%; max-width: 620px; flex-shrink: 0;
+  height: 70px; position: relative;
+  border: 1px solid var(--text3); border-radius: 3px;
+  background: var(--deep); overflow: hidden;
+}
+#choir-canvas { width: 100%; height: 100%; display: block; }
+#choir-label {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  font-family: var(--serif); font-style: italic; font-size: 11px;
+  color: var(--text3); pointer-events: none;
+  transition: color .3s;
+}
+#choir-label.on { color: var(--drift2); text-shadow: 0 0 8px var(--drift); }
+
+/* tape flutter indicator */
+#tape-flutter {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-family: var(--mono); font-size: 7px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  transition: color .2s;
+}
+#tape-flutter.on { color: var(--tape2); }
+
+/* ── PHONK PAD GRID ── */
+#pad-grid {
+  width: 100%; max-width: 620px; flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.dpad {
+  position: relative;
+  height: 64px;
+  border: 1px solid var(--text3);
+  border-radius: 3px;
+  background: rgba(7,5,15,.7);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  transition: border-color .07s, background .07s;
+  user-select: none; overflow: hidden;
+}
+.dpad::after {
+  content: ''; position: absolute; inset: 0;
+  opacity: 0; transition: opacity .07s; pointer-events: none;
+  border-radius: 2px;
+}
+.dpad.hit::after { opacity: 1; }
+
+.dpad.v-drift::after  { background: rgba(160,96,255,.14); }
+.dpad.v-drift.hit     { border-color: var(--drift); }
+.dpad.v-phonk::after  { background: rgba(255,48,96,.12); }
+.dpad.v-phonk.hit     { border-color: var(--phonk); }
+.dpad.v-tape::after   { background: rgba(200,160,64,.11); }
+.dpad.v-tape.hit      { border-color: var(--tape); }
+.dpad.v-ghost::after  { background: rgba(48,72,120,.14); }
+.dpad.v-ghost.hit     { border-color: var(--ghost2); }
+
+.dpad-name {
+  font-family: var(--serif); font-style: italic; font-size: 12px; font-weight: 300;
+  color: var(--text2); pointer-events: none; transition: color .07s;
+  text-align: center; line-height: 1.2;
+}
+.dpad.v-drift.hit .dpad-name { color: var(--drift2); text-shadow: 0 0 8px var(--drift); }
+.dpad.v-phonk.hit .dpad-name { color: var(--phonk2); text-shadow: 0 0 8px var(--phonk); }
+.dpad.v-tape.hit  .dpad-name { color: var(--tape2);  text-shadow: 0 0 8px var(--tape); }
+.dpad.v-ghost.hit .dpad-name { color: #8ab0d8; text-shadow: 0 0 8px var(--ghost2); }
+
+.dpad-key {
+  font-family: var(--mono); font-size: 7px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase; pointer-events: none;
+}
+.dpad.hit .dpad-key { color: var(--text2); }
+
+/* hold indicator */
+.dpad.hold-on { background: rgba(160,96,255,.05); border-color: rgba(160,96,255,.4); }
+.dpad.hold-on.v-phonk { background: rgba(255,48,96,.04); border-color: rgba(255,48,96,.4); }
+.dpad.hold-on .dpad-name { color: var(--drift2); }
+.dpad.hold-on.v-phonk .dpad-name { color: var(--phonk2); }
+.hold-dot {
+  position: absolute; top: 5px; right: 7px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--text3); transition: background .15s;
+}
+.dpad.hold-on .hold-dot { background: var(--drift); box-shadow: 0 0 4px var(--drift); }
+.dpad.hold-on.v-phonk .hold-dot { background: var(--phonk); box-shadow: 0 0 4px var(--phonk); }
+
+/* pad ring pulse */
+.dpad-ring {
+  position: absolute; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--drift); opacity: 0; pointer-events: none;
+}
+.dpad.v-phonk .dpad-ring { border-color: var(--phonk); }
+.dpad.v-tape  .dpad-ring { border-color: var(--tape); }
+.dpad.v-ghost .dpad-ring { border-color: var(--ghost2); }
+.dpad.hit .dpad-ring { animation: driftring .5s ease-out forwards; }
+@keyframes driftring {
+  0%   { opacity: .8; transform: scale(.3); }
+  100% { opacity: 0;  transform: scale(2.5); }
+}
+
+/* ── KEYBOARD ── */
+#kb-wrap {
+  width: 100%; max-width: 620px; flex-shrink: 0; position: relative;
+}
+#keyboard {
+  display: flex; height: 80px;
+  border: 1px solid var(--text3); border-radius: 0 0 3px 3px;
+  overflow: hidden; position: relative;
+  background: var(--deep);
+}
+.key { position: relative; cursor: pointer; flex-shrink: 0; transition: background .04s; }
+.key.white {
+  background: linear-gradient(180deg,#0e0c1e 0%,#080612 100%);
+  border-right: 1px solid var(--text3); flex: 1; z-index: 1;
+}
+.key.white:hover { background: linear-gradient(180deg,#1a1630 0%,#120e26 100%); }
+.key.white.active {
+  background: linear-gradient(180deg, rgba(160,96,255,.45) 0%, rgba(100,50,180,.3) 100%) !important;
+  box-shadow: inset 0 -2px 10px rgba(160,96,255,.25);
+}
+.key.black {
+  background: linear-gradient(180deg,#04040e 0%,#08081a 100%);
+  position: absolute; width: 60%; height: 60%; top: 0; z-index: 2;
+  border-radius: 0 0 3px 3px;
+  border: 1px solid var(--text3); border-top: none;
+}
+.key.black:hover { background: linear-gradient(180deg,#10102a 0%,#14142e 100%); }
+.key.black.active {
+  background: rgba(160,96,255,.28) !important;
+  box-shadow: 0 0 10px rgba(160,96,255,.25);
+}
+.key-lbl {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 7px; color: var(--text3);
+  pointer-events: none; user-select: none;
+}
+.key.active .key-lbl { color: rgba(0,0,0,.3); }
+
+/* oct wheel */
+#oct-outer {
+  position: absolute; left: -48px; top: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+#oct-wheel {
+  width: 32px; height: 80px; background: var(--void);
+  border: 1px solid var(--text3); border-radius: 4px;
+  overflow: hidden; cursor: ns-resize; position: relative; user-select: none;
+}
+#oct-wheel-inner { position: absolute; top: 0; left: 0; right: 0; transition: transform .14s cubic-bezier(.22,.68,0,1.2); }
+.ow-slot {
+  height: 18px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 8px; color: var(--text3);
+  border-bottom: 1px solid var(--text3); flex-shrink: 0;
+}
+.ow-slot.cur { color: var(--drift); background: rgba(160,96,255,.07); }
+#oct-wheel::before,#oct-wheel::after { content:'';position:absolute;left:0;right:0;height:12px;z-index:2;pointer-events:none; }
+#oct-wheel::before { top:0;background:linear-gradient(to bottom,var(--void),transparent); }
+#oct-wheel::after  { bottom:0;background:linear-gradient(to top,var(--void),transparent); }
+#oct-lbl { font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1px; }
+
+/* ── WAVEFORM ── */
+#wave-bar {
+  flex-shrink: 0; height: 52px; background: var(--deep);
+  border-top: 1px solid var(--text3); position: relative; z-index: 2; overflow: hidden;
+}
+#wave-canvas { width:100%;height:100%;display:block; }
+
+/* ── CONTROLS ── */
+#controls {
+  flex-shrink: 0;
+  background: linear-gradient(0deg, rgba(7,5,15,.98) 0%, transparent 100%);
+  border-top: 1px solid var(--text3);
+  padding: 10px 24px 14px;
+  display: flex; align-items: center; gap: 18px;
+  position: relative; z-index: 2; flex-wrap: wrap;
+}
+.cdiv { width:1px;height:32px;background:var(--text3);flex-shrink:0; }
+.kg { display:flex;flex-direction:column;align-items:center;gap:3px; }
+canvas.knob { cursor:ns-resize;display:block; }
+.kl { font-family:var(--mono);font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3); }
+.kv { font-family:var(--mono);font-size:9px;color:var(--text2);min-width:32px;text-align:center; }
+
+.mode-btn {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 11px; border: 1px solid var(--text3); border-radius: 3px;
+  color: var(--text2); background: transparent; cursor: pointer; transition: all .15s;
+}
+.mode-btn:hover { color: var(--drift2); border-color: var(--drift); }
+.mode-btn.active {
+  color: var(--drift2); border-color: var(--drift);
+  background: rgba(160,96,255,.07);
+  text-shadow: 0 0 8px var(--drift);
+}
+
+.choir-btn {
+  font-family: var(--serif); font-style: italic; font-size: 13px;
+  color: var(--text2); background: transparent;
+  border: 1px solid var(--text3); border-radius: 3px;
+  padding: 4px 10px; cursor: pointer; transition: all .15s;
+}
+.choir-btn:hover { color: var(--phonk2); border-color: var(--phonk); }
+.choir-btn.active { color: var(--phonk2); border-color: var(--phonk); background: rgba(255,48,96,.06); }
+
+#note-display { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+#note-name {
+  font-family: var(--serif); font-size: 26px; font-style: italic; font-weight: 300;
+  color: var(--drift2); text-shadow: 0 0 16px var(--drift);
+  line-height: 1; min-width: 60px; text-align: right; transition: color .05s;
+}
+#freq-display  { font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:1px; }
+#drift-display { font-family:var(--serif);font-style:italic;font-size:11px;color:rgba(160,96,255,.4);letter-spacing:.5px; }
+
+::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body>
+
+<!-- Cursor: ghost wisp -->
+<div id="cursor">
+  <svg viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11 2 C7 2 4 5 4 9 C4 14 7 17 7 19 C8 18 9 17 11 17 C13 17 14 18 15 19 C15 17 18 14 18 9 C18 5 15 2 11 2Z"
+      fill="rgba(160,96,255,.12)" stroke="rgba(160,96,255,.75)" stroke-width="1" stroke-linejoin="round"/>
+    <circle cx="9"  cy="9" r="1.2" fill="rgba(160,96,255,.8)"/>
+    <circle cx="13" cy="9" r="1.2" fill="rgba(160,96,255,.8)"/>
+  </svg>
+</div>
+
+<canvas id="atmos"></canvas>
+
+<div id="app">
+  <div id="hdr">
+    <div>
+      <div id="logo">Wraith Drift</div>
+      <div id="logo-sub">Phonk Pad · Choir · Tape · 3am</div>
+    </div>
+    <div id="hdr-stats">
+      <div class="hstat">Note <span id="hs-note">—</span></div>
+      <div class="hstat">Tape <span id="hs-tape">—</span></div>
+      <div class="hstat">Voices <span id="hs-voices">0</span></div>
+      <div id="power-dot"></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="left-col">
+
+      <!-- CHOIR VISUALIZER -->
+      <div id="choir-vis">
+        <canvas id="choir-canvas"></canvas>
+        <div id="choir-label">the choir is silent</div>
+        <div id="tape-flutter">tape ·</div>
+      </div>
+
+      <!-- PHONK PAD GRID -->
+      <div id="pad-grid">
+
+        <!-- ROW 1: choir / pad layers -->
+        <div class="dpad v-drift" data-sound="choir-aah"     data-key="q" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Choir Aah</div><div class="dpad-key">Q</div></div>
+        <div class="dpad v-drift" data-sound="choir-mmm"     data-key="w" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Choir Mmm</div><div class="dpad-key">W</div></div>
+        <div class="dpad v-drift" data-sound="choir-ooh"     data-key="e" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Choir Ooh</div><div class="dpad-key">E</div></div>
+        <div class="dpad v-drift" data-sound="ghost-pad"     data-key="r" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Ghost Pad</div><div class="dpad-key">R</div></div>
+
+        <!-- ROW 2: phonk elements -->
+        <div class="dpad v-phonk" data-sound="phonk-brass"   data-key="a" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Phonk Brass</div><div class="dpad-key">A</div></div>
+        <div class="dpad v-phonk" data-sound="sub-drone"     data-key="s" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Sub Drone</div><div class="dpad-key">S</div></div>
+        <div class="dpad v-tape"  data-sound="tape-squeal"   data-key="d"><div class="dpad-ring"></div><div class="dpad-name">Tape Squeal</div><div class="dpad-key">D</div></div>
+        <div class="dpad v-tape"  data-sound="vinyl-crackle" data-key="f" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Vinyl Crackle</div><div class="dpad-key">F</div></div>
+
+        <!-- ROW 3: atmosphere -->
+        <div class="dpad v-ghost" data-sound="dark-atmos"    data-key="z" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Dark Atmos</div><div class="dpad-key">Z</div></div>
+        <div class="dpad v-ghost" data-sound="rain-tape"     data-key="x" data-hold="1"><div class="dpad-ring"></div><div class="hold-dot"></div><div class="dpad-name">Rain Tape</div><div class="dpad-key">X</div></div>
+        <div class="dpad v-tape"  data-sound="pitch-drop"    data-key="c"><div class="dpad-ring"></div><div class="dpad-name">Pitch Drop</div><div class="dpad-key">C</div></div>
+        <div class="dpad v-phonk" data-sound="808-tail"      data-key="v"><div class="dpad-ring"></div><div class="dpad-name">808 Tail</div><div class="dpad-key">V</div></div>
+
+      </div>
+
+      <!-- KEYBOARD -->
+      <div id="kb-wrap" style="position:relative;">
+        <div id="oct-outer">
+          <div id="oct-wheel"><div id="oct-wheel-inner"></div></div>
+          <div id="oct-lbl">Oct</div>
+        </div>
+        <div id="keyboard"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="wave-bar"><canvas id="wave-canvas"></canvas></div>
+
+  <div id="controls">
+    <!-- Drift mode -->
+    <div style="display:flex;gap:5px;flex-direction:column;">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:2px;">Mode</div>
+      <div style="display:flex;gap:4px;">
+        <button class="mode-btn active" data-mode="drift">Drift</button>
+        <button class="mode-btn" data-mode="drown">Drown</button>
+        <button class="mode-btn" data-mode="ascend">Ascend</button>
+        <button class="mode-btn" data-mode="haunt">Haunt</button>
+      </div>
+    </div>
+
+    <div class="cdiv"></div>
+
+    <!-- Choir type -->
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">Choir</div>
+      <div style="display:flex;gap:4px;">
+        <button class="choir-btn active" data-choir="distant">Distant</button>
+        <button class="choir-btn" data-choir="close">Close</button>
+        <button class="choir-btn" data-choir="buried">Buried</button>
+      </div>
+    </div>
+
+    <div class="cdiv"></div>
+
+    <div class="kg">
+      <canvas class="knob" id="k-reverb"  width="42" height="42" data-min="0"    data-max="1"   data-val="0.88" data-color="#a060ff"></canvas>
+      <div class="kl">Space</div><div class="kv" id="v-reverb">0.88</div>
+    </div>
+    <div class="kg">
+      <canvas class="knob" id="k-tape"    width="42" height="42" data-min="0"    data-max="1"   data-val="0.55" data-color="#c8a040"></canvas>
+      <div class="kl">Tape</div><div class="kv" id="v-tape">0.55</div>
+    </div>
+    <div class="kg">
+      <canvas class="knob" id="k-detune"  width="42" height="42" data-min="0"    data-max="60"  data-val="22"   data-color="#c898ff"></canvas>
+      <div class="kl">Detune</div><div class="kv" id="v-detune">22</div>
+    </div>
+    <div class="kg">
+      <canvas class="knob" id="k-attack"  width="42" height="42" data-min="0.05" data-max="5"   data-val="1.4"  data-color="#ff3060"></canvas>
+      <div class="kl">Rise</div><div class="kv" id="v-attack">1.40</div>
+    </div>
+    <div class="kg">
+      <canvas class="knob" id="k-choir"   width="42" height="42" data-min="0"    data-max="1"   data-val="0.6"  data-color="#486898"></canvas>
+      <div class="kl">Choir</div><div class="kv" id="v-choir">0.60</div>
+    </div>
+
+    <div class="cdiv"></div>
+
+    <div id="note-display">
+      <div id="note-name">—</div>
+      <div id="freq-display">— Hz</div>
+      <div id="drift-display">3am forever</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// WRAITH DRIFT — Phonk Pad Synth
+// Echoey choirs, tape warble, sub bass, 3am energy
+// ══════════════════════════════════════════════════════════════
+
+let actx = null, convolver = null, analyser = null;
+const activeVoices = new Map();   // noteNum → voice
+const holdNodes    = new Map();   // sound → { nodes, masterGain }
+let tapeFlutterPhase = 0;
+let choirActive = false;
+
+function getCtx() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  if (!convolver) buildReverb();
+  if (!analyser) {
+    analyser = actx.createAnalyser(); analyser.fftSize = 512;
+    analyser.connect(actx.destination);
+  }
+  return actx;
+}
+
+const P = {
+  reverb: 0.88, tape: 0.55, detune: 22, attack: 1.4, choir: 0.6,
+  mode: 'drift', choirType: 'distant',
+};
+
+const MODE_QUOTES = {
+  drift: '3am forever', drown: 'deep in the water',
+  ascend: 'watch me level up', haunt: 'they still hear me',
+};
+
+// ══════════════════════════════════════════════════════════════
+// REVERB: massive, dark, slow-decaying — phonk space
+// ══════════════════════════════════════════════════════════════
+function buildReverb() {
+  const c = actx;
+  const dur = 8.0;
+  const len = c.sampleRate * dur;
+  const buf = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    // Very long smooth dark tail — no harsh reflections
+    for (let i = 0; i < len; i++) {
+      const env = Math.pow(1 - i/len, 1.05);
+      // Low-pass the noise (dark reverb)
+      d[i] = (Math.random()*2-1) * env * (0.5 + 0.5*Math.sin(i*0.0003));
+    }
+  }
+  if (convolver) try { convolver.disconnect(); } catch(e){}
+  convolver = c.createConvolver(); convolver.buffer = buf;
+  convolver.connect(c.destination);
+}
+
+function midiToFreq(n) { return 440 * Math.pow(2,(n-69)/12); }
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function routeOut(c, node, vol=1) {
+  const dry = c.createGain(); dry.gain.value = (1-P.reverb*0.9)*vol;
+  const wet = c.createGain(); wet.gain.value = P.reverb*0.9*vol;
+  node.connect(dry); dry.connect(analyser);
+  node.connect(wet); wet.connect(convolver);
+  return { dry, wet };
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAPE WARBLE ENGINE
+// Slow pitch modulation simulating tape wow/flutter
+// ══════════════════════════════════════════════════════════════
+function makeTapeWarble(c, targetNode) {
+  // Wow: very slow (0.3–0.8 Hz), big swing
+  const wow = c.createOscillator(); wow.frequency.value = 0.3 + Math.random()*0.5;
+  const wowG = c.createGain(); wowG.gain.value = P.tape * 18;
+  wow.connect(wowG); wowG.connect(targetNode.detune || targetNode.frequency);
+  // Flutter: faster (6–12 Hz), small
+  const flutter = c.createOscillator(); flutter.frequency.value = 6 + Math.random()*6;
+  const flutG = c.createGain(); flutG.gain.value = P.tape * 4;
+  flutter.connect(flutG); flutG.connect(targetNode.detune || targetNode.frequency);
+  wow.start(); flutter.start();
+  return [wow, flutter];
+}
+
+// ══════════════════════════════════════════════════════════════
+// KEYBOARD PAD VOICE: drift synth
+// ══════════════════════════════════════════════════════════════
+function buildDriftVoice(c, freq, vel, now) {
+  const nodes = [];
+  const master = c.createGain(); master.gain.value = 0;
+
+  const atk = P.attack;
+
+  // Mode shapes
+  const modeEnvs = {
+    drift:  () => { master.gain.linearRampToValueAtTime(vel*0.65, now+atk); },
+    drown:  () => { master.gain.setTargetAtTime(vel*0.6, now, atk*0.7); },
+    ascend: () => {
+      master.gain.linearRampToValueAtTime(vel*0.2, now+atk*0.4);
+      master.gain.linearRampToValueAtTime(vel*0.7, now+atk*1.2);
+    },
+    haunt:  () => {
+      master.gain.linearRampToValueAtTime(vel*0.5, now+atk*0.5);
+      master.gain.setTargetAtTime(vel*0.65, now+atk*0.5, 0.3);
+    },
+  };
+  master.gain.setValueAtTime(0, now);
+  (modeEnvs[P.mode]||modeEnvs.drift)();
+
+  // ── MAIN DRIFT LAYERS ──
+  // 7 detuned oscillators — the core drift pad
+  const detunes = [0, 1, -1, 0.5, -0.5, 2, -2];
+  const amps    = [0.5, 0.3, 0.3, 0.22, 0.22, 0.14, 0.14];
+  detunes.forEach((dt, i) => {
+    const osc = c.createOscillator();
+    osc.type = i < 3 ? 'sawtooth' : 'triangle';
+    osc.frequency.value = freq;
+    osc.detune.value = dt * P.detune + (Math.random()-0.5)*2;
+
+    // Per-voice slow drift LFO
+    const driftLFO = c.createOscillator();
+    driftLFO.frequency.value = 0.08 + Math.random()*0.12;
+    const driftG = c.createGain(); driftG.gain.value = P.detune * 0.4;
+    driftLFO.connect(driftG); driftG.connect(osc.detune);
+
+    // Tape warble on each
+    const tw = makeTapeWarble(c, osc);
+
+    const og = c.createGain(); og.gain.value = amps[i] * 0.55;
+    osc.connect(og); og.connect(master);
+    osc.start(now); driftLFO.start(now);
+    nodes.push(osc, driftLFO, ...tw);
+  });
+
+  // ── CHOIR LAYER ──
+  if (P.choir > 0.05) {
+    addChoirLayer(c, freq, vel, now, master, nodes, P.choirType, P.choir);
+  }
+
+  // ── FILTER: slowly opens like a veil lifting ──
+  const lpf = c.createBiquadFilter(); lpf.type = 'lowpass';
+  lpf.frequency.setValueAtTime(180, now);
+  lpf.frequency.exponentialRampToValueAtTime(400 + P.tape * 2000, now + atk * 0.6);
+  lpf.frequency.exponentialRampToValueAtTime(1200 + (1-P.tape)*3000, now + atk * 1.4);
+  lpf.Q.value = 1.2;
+
+  // Filter LFO — very slow breathe
+  const fLFO = c.createOscillator(); fLFO.frequency.value = 0.06;
+  const fLFOG = c.createGain(); fLFOG.gain.value = 200;
+  fLFO.connect(fLFOG); fLFOG.connect(lpf.frequency);
+  fLFO.start(now); nodes.push(fLFO);
+
+  master.connect(lpf);
+  const r = routeOut(c, lpf, 1);
+
+  return { master, lpf, nodes, ...r };
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHOIR SYNTHESIS
+// Formant-based vocal synthesis with tape warble
+// Multiple voices slightly detuned = ethereal choir
+// ══════════════════════════════════════════════════════════════
+function addChoirLayer(c, freq, vel, now, masterGain, nodes, type, amount) {
+  // Choir formants: Aah vowel shape
+  const formantSets = {
+    distant: [[800,1200,2800], [0.4,0.2,0.08]],
+    close:   [[700,1100,2600], [0.5,0.28,0.1]],
+    buried:  [[500,900,2200],  [0.35,0.15,0.05]],
+  };
+  const [formants, fAmps] = formantSets[type] || formantSets.distant;
+
+  // 4-6 vocal "singers" slightly detuned
+  const numVoices = 5;
+  for (let v = 0; v < numVoices; v++) {
+    const voicePitch = freq * (1 + (Math.random()-0.5)*0.006); // ±0.3% humanize
+    const voiceOsc = c.createOscillator();
+    voiceOsc.type = 'sawtooth';
+    voiceOsc.frequency.value = voicePitch;
+
+    // Vibrato per voice
+    const vib = c.createOscillator(); vib.frequency.value = 4.5 + Math.random()*1.5;
+    const vibG = c.createGain(); vibG.gain.value = 3 + Math.random()*4;
+    vib.connect(vibG); vibG.connect(voiceOsc.frequency);
+
+    // Tape warble
+    const tw = makeTapeWarble(c, voiceOsc);
+
+    // Route through formant filters
+    formants.forEach((fFreq, fi) => {
+      const bpf = c.createBiquadFilter(); bpf.type='bandpass';
+      bpf.frequency.value = fFreq * (0.95 + Math.random()*0.1);
+      bpf.Q.value = 8 + Math.random()*4;
+      const fg = c.createGain();
+      fg.gain.setValueAtTime(0, now);
+      fg.gain.linearRampToValueAtTime(
+        vel * fAmps[fi] * amount * (0.8 + Math.random()*0.4) / numVoices,
+        now + P.attack * (0.6 + v*0.08)
+      );
+      voiceOsc.connect(bpf); bpf.connect(fg); fg.connect(masterGain);
+      nodes.push(fg);
+    });
+
+    voiceOsc.start(now); vib.start(now);
+    nodes.push(voiceOsc, vib, ...tw);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PAD SOUNDS (one-shots and holds)
+// ══════════════════════════════════════════════════════════════
+function synthChoirAah(c, vel) {
+  const now = c.currentTime;
+  const freq = midiToFreq(60 + Math.floor(Math.random()*5)); // near middle C
+  const nodes = [];
+  const master = c.createGain(); master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.6, now+1.2);
+  addChoirLayer(c, freq, vel, now, master, nodes, P.choirType, P.choir*1.4);
+  const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3000;
+  master.connect(lp); routeOut(c, lp, 1);
+  nodes.forEach(n=>{try{n.start&&!n._s&&(n.start(now),n._s=1)}catch(e){}});
+  choirActive = true;
+  document.getElementById('choir-label').textContent='the choir speaks';
+  document.getElementById('choir-label').classList.add('on');
+  return { nodes, master };
+}
+
+function synthChoirMmm(c, vel) {
+  const now = c.currentTime;
+  // Mm: closed formant, humming
+  const numV = 6;
+  const nodes = [];
+  const master = c.createGain(); master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.55, now+1.5);
+  for (let v=0;v<numV;v++) {
+    const freq = midiToFreq(57 + v) * (1+(Math.random()-0.5)*0.008);
+    const osc = c.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+    const vib = c.createOscillator(); vib.frequency.value=4.8+Math.random();
+    const vibG = c.createGain(); vibG.gain.value=2+Math.random()*3;
+    vib.connect(vibG); vibG.connect(osc.frequency);
+    const bpf = c.createBiquadFilter(); bpf.type='bandpass'; bpf.frequency.value=380+v*30; bpf.Q.value=10;
+    const g = c.createGain(); g.gain.value=0.45/numV;
+    const tw = makeTapeWarble(c, osc);
+    osc.connect(bpf); bpf.connect(g); g.connect(master);
+    osc.start(now); vib.start(now);
+    nodes.push(osc, vib, ...tw);
+  }
+  const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1800;
+  master.connect(lp); routeOut(c,lp,1);
+  nodes.forEach(n=>{try{n.start&&!n._s&&(n.start(now),n._s=1)}catch(e){}});
+  choirActive=true;
+  document.getElementById('choir-label').textContent='the choir hums';
+  document.getElementById('choir-label').classList.add('on');
+  return { nodes, master };
+}
+
+function synthChoirOoh(c, vel) {
+  const now = c.currentTime;
+  const nodes = [];
+  const master = c.createGain(); master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.58, now+1.0);
+  const numV=5;
+  for(let v=0;v<numV;v++){
+    const freq = midiToFreq(64+v) * (1+(Math.random()-0.5)*0.006);
+    const osc = c.createOscillator(); osc.type='sawtooth'; osc.frequency.value=freq;
+    const vib=c.createOscillator();vib.frequency.value=5+Math.random();
+    const vibG=c.createGain();vibG.gain.value=4;
+    vib.connect(vibG);vibG.connect(osc.frequency);
+    // Ooh: round formant
+    [[450,0.5],[900,0.22],[2200,0.06]].forEach(([ff,fa])=>{
+      const bpf=c.createBiquadFilter();bpf.type='bandpass';bpf.frequency.value=ff*(0.95+Math.random()*0.1);bpf.Q.value=9;
+      const g=c.createGain();g.gain.value=fa*vel/(numV*0.9);
+      osc.connect(bpf);bpf.connect(g);g.connect(master);
+    });
+    const tw=makeTapeWarble(c,osc);
+    osc.start(now);vib.start(now);
+    nodes.push(osc,vib,...tw);
+  }
+  const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3500;
+  master.connect(lp);routeOut(c,lp,1);
+  nodes.forEach(n=>{try{n.start&&!n._s&&(n.start(now),n._s=1)}catch(e){}});
+  choirActive=true;
+  document.getElementById('choir-label').textContent='the choir calls';
+  document.getElementById('choir-label').classList.add('on');
+  return {nodes,master};
+}
+
+function synthGhostPad(c, vel) {
+  const now = c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.5, now+2.0);
+  // Ghost: very high, thin, slightly dissonant cluster
+  [0,7,12,19].forEach((semi,i)=>{
+    const freq=midiToFreq(72+semi)*(1+(Math.random()-0.5)*0.01);
+    const osc=c.createOscillator();osc.type='sine';osc.frequency.value=freq;
+    const tw=makeTapeWarble(c,osc);
+    const g=c.createGain();g.gain.value=[0.5,0.3,0.2,0.12][i]*vel;
+    osc.connect(g);g.connect(master);osc.start(now);
+    nodes.push(osc,...tw);
+  });
+  const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;
+  master.connect(hp);routeOut(c,hp,1);
+  return {nodes,master};
+}
+
+function synthPhonkBrass(c, vel) {
+  const now = c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.6, now+0.3);
+  // Phonk brass: sawtooth through bandpass, tight and punchy
+  const freq = midiToFreq(48); // low C
+  [1,1.5,2].forEach((mult,i)=>{
+    const osc=c.createOscillator();osc.type='sawtooth';
+    osc.frequency.value=freq*mult;
+    const tw=makeTapeWarble(c,osc);
+    const bpf=c.createBiquadFilter();bpf.type='bandpass';
+    bpf.frequency.value=800+i*400;bpf.Q.value=2.5;
+    const g=c.createGain();g.gain.value=[0.55,0.28,0.12][i];
+    osc.connect(bpf);bpf.connect(g);g.connect(master);
+    osc.start(now);nodes.push(osc,...tw);
+  });
+  routeOut(c,master,1);
+  return {nodes,master};
+}
+
+function synthSubDrone(c, vel) {
+  const now=c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.7, now+0.8);
+  const freq=midiToFreq(36);
+  const osc=c.createOscillator();osc.type='sine';osc.frequency.value=freq;
+  const tw=makeTapeWarble(c,osc);
+  const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=200;
+  osc.connect(lpf);lpf.connect(master);osc.start(now);
+  nodes.push(osc,...tw);
+  routeOut(c,master,1);
+  return {nodes,master};
+}
+
+function synthTapeSqueal(c, vel) {
+  const now=c.currentTime;
+  // One-shot: tape stopping / squealing
+  const osc=c.createOscillator();osc.type='sawtooth';
+  osc.frequency.setValueAtTime(3200,now);
+  osc.frequency.exponentialRampToValueAtTime(80,now+0.8);
+  const g=c.createGain();g.gain.setValueAtTime(vel*0.4,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.85);
+  const bpf=c.createBiquadFilter();bpf.type='bandpass';bpf.frequency.value=1200;bpf.Q.value=3;
+  osc.connect(bpf);bpf.connect(g);
+  routeOut(c,g,1);
+  osc.start(now);osc.stop(now+0.9);
+}
+
+function synthVinylCrackle(c, vel) {
+  const now=c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=vel*0.22;
+  // Loop of noise with random amplitude pops
+  const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate);
+  const d=nb.getChannelData(0);
+  for(let i=0;i<d.length;i++){
+    // sparse random crackles
+    d[i]=(Math.random()<0.002?((Math.random()-0.5)*3):0)+(Math.random()-0.5)*0.04;
+  }
+  const src=c.createBufferSource();src.buffer=nb;src.loop=true;
+  const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=6000;
+  const hpf=c.createBiquadFilter();hpf.type='highpass';hpf.frequency.value=400;
+  src.connect(hpf);hpf.connect(lpf);lpf.connect(master);
+  src.start(now); nodes.push(src);
+  routeOut(c,master,1);
+  return {nodes,master};
+}
+
+function synthDarkAtmos(c, vel) {
+  const now=c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=0;
+  master.gain.linearRampToValueAtTime(vel*0.3, now+2.5);
+  // Pink noise + very low rumble
+  const nb=c.createBuffer(1,c.sampleRate*3,c.sampleRate);
+  const d=nb.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0;
+  for(let i=0;i<d.length;i++){
+    const w=Math.random()*2-1;
+    b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;
+    b2=0.96900*b2+w*0.1538520;b3=0.86650*b3+w*0.3104856;
+    b4=0.55000*b4+w*0.5329522;b5=-0.7616*b5-w*0.0168980;
+    d[i]=(b0+b1+b2+b3+b4+b5+w*0.5362)*0.11;
+  }
+  const src=c.createBufferSource();src.buffer=nb;src.loop=true;
+  const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=800;
+  src.connect(lpf);lpf.connect(master);src.start(now);nodes.push(src);
+  routeOut(c,master,1);
+  return {nodes,master};
+}
+
+function synthRainTape(c, vel) {
+  const now=c.currentTime;
+  const nodes=[]; const master=c.createGain();master.gain.value=vel*0.2;
+  const nb=c.createBuffer(1,c.sampleRate*3,c.sampleRate);
+  const d=nb.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=c.createBufferSource();src.buffer=nb;src.loop=true;
+  const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=5000;
+  const hpf=c.createBiquadFilter();hpf.type='highpass';hpf.frequency.value=800;
+  // Tape wow on the rain
+  const wow=c.createOscillator();wow.frequency.value=0.4;
+  const wowG=c.createGain();wowG.gain.value=P.tape*300;
+  wow.connect(wowG);wowG.connect(lpf.frequency);
+  src.connect(hpf);hpf.connect(lpf);lpf.connect(master);
+  src.start(now);wow.start(now);nodes.push(src,wow);
+  routeOut(c,master,1);
+  return {nodes,master};
+}
+
+function synthPitchDrop(c, vel) {
+  const now=c.currentTime;
+  const osc=c.createOscillator();osc.type='sawtooth';
+  osc.frequency.setValueAtTime(440,now);
+  osc.frequency.exponentialRampToValueAtTime(30,now+1.5);
+  const g=c.createGain();g.gain.setValueAtTime(vel*0.55,now);g.gain.exponentialRampToValueAtTime(0.001,now+1.6);
+  const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=2000;
+  osc.connect(lpf);lpf.connect(g);routeOut(c,g,1);
+  osc.start(now);osc.stop(now+1.7);
+}
+
+function synth808Tail(c, vel) {
+  const now=c.currentTime;
+  const osc=c.createOscillator();osc.type='sine';
+  osc.frequency.setValueAtTime(160,now);
+  osc.frequency.exponentialRampToValueAtTime(42,now+0.18);
+  const g=c.createGain();
+  g.gain.setValueAtTime(vel*1.0,now);
+  g.gain.exponentialRampToValueAtTime(vel*0.6,now+0.05);
+  g.gain.exponentialRampToValueAtTime(0.001,now+2.2);
+  const sub=c.createBiquadFilter();sub.type='lowpass';sub.frequency.value=200;
+  osc.connect(sub);sub.connect(g);routeOut(c,g,1);
+  osc.start(now);osc.stop(now+2.3);
+}
+
+// ── Dispatch ──
+const HOLD_SOUNDS = new Set([
+  'choir-aah','choir-mmm','choir-ooh','ghost-pad',
+  'phonk-brass','sub-drone','vinyl-crackle',
+  'dark-atmos','rain-tape',
+]);
+const SYNTH_MAP = {
+  'choir-aah':     synthChoirAah,
+  'choir-mmm':     synthChoirMmm,
+  'choir-ooh':     synthChoirOoh,
+  'ghost-pad':     (c,v)=>synthGhostPad(c,v),
+  'phonk-brass':   (c,v)=>synthPhonkBrass(c,v),
+  'sub-drone':     (c,v)=>synthSubDrone(c,v),
+  'tape-squeal':   (c,v)=>{ synthTapeSqueal(c,v); return null; },
+  'vinyl-crackle': (c,v)=>synthVinylCrackle(c,v),
+  'dark-atmos':    (c,v)=>synthDarkAtmos(c,v),
+  'rain-tape':     (c,v)=>synthRainTape(c,v),
+  'pitch-drop':    (c,v)=>{ synthPitchDrop(c,v); return null; },
+  '808-tail':      (c,v)=>{ synth808Tail(c,v); return null; },
+};
+const PAD_NAMES = {
+  'choir-aah':'Choir Aah','choir-mmm':'Choir Mmm','choir-ooh':'Choir Ooh',
+  'ghost-pad':'Ghost Pad','phonk-brass':'Phonk Brass','sub-drone':'Sub Drone',
+  'tape-squeal':'Tape Squeal','vinyl-crackle':'Vinyl Crackle','dark-atmos':'Dark Atmos',
+  'rain-tape':'Rain Tape','pitch-drop':'Pitch Drop','808-tail':'808 Tail',
+};
+
+function triggerPad(padEl, vel) {
+  const sound = padEl.dataset.sound;
+  const c = getCtx();
+
+  if (HOLD_SOUNDS.has(sound)) {
+    if (holdNodes.has(sound)) {
+      // Stop
+      const h=holdNodes.get(sound);
+      if(h.master){
+        h.master.gain.setTargetAtTime(0, c.currentTime, 0.4);
+        setTimeout(()=>{ h.nodes.forEach(n=>{try{n.stop()}catch(e){}});},2000);
+      }
+      holdNodes.delete(sound);
+      padEl.classList.remove('hold-on');
+      // Check if any choir holds remain
+      const choirSounds=['choir-aah','choir-mmm','choir-ooh'];
+      if(!choirSounds.some(s=>holdNodes.has(s))){
+        choirActive=false;
+        document.getElementById('choir-label').textContent='the choir is silent';
+        document.getElementById('choir-label').classList.remove('on');
+      }
+    } else {
+      const result = SYNTH_MAP[sound]?.(c, vel);
+      if (result) holdNodes.set(sound, result);
+      padEl.classList.add('hold-on');
+    }
+  } else {
+    SYNTH_MAP[sound]?.(c, vel);
+  }
+
+  padEl.classList.add('hit');
+  clearTimeout(padEl._t); padEl._t=setTimeout(()=>padEl.classList.remove('hit'),140);
+
+  // Display
+  const isPhonk=padEl.classList.contains('v-phonk');
+  const isTape=padEl.classList.contains('v-tape');
+  const name=PAD_NAMES[sound]||sound;
+  document.getElementById('note-name').textContent=name.split(' ')[0];
+  document.getElementById('freq-display').textContent=name;
+  ['hs-note','hs-tape'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.className=isPhonk?'lit-phonk':isTape?'lit-tape':'lit';
+    clearTimeout(el._t);el._t=setTimeout(()=>el.className='',350);
+  });
+  document.getElementById('hs-voices').textContent=holdNodes.size+activeVoices.size;
+  const dot=document.getElementById('power-dot');
+  dot.classList.add('on');clearTimeout(dot._t);dot._t=setTimeout(()=>{ if(holdNodes.size===0&&activeVoices.size===0)dot.classList.remove('on');},300);
+}
+
+document.querySelectorAll('.dpad').forEach(pad=>{
+  pad.addEventListener('mousedown',e=>{e.preventDefault();getCtx();triggerPad(pad,0.65+Math.random()*0.35);});
+  pad.addEventListener('touchstart',e=>{e.preventDefault();getCtx();triggerPad(pad,0.65+Math.random()*0.35);},{passive:false});
+});
+
+// ── KEYBOARD ──
+const WHITE_KEYS=[0,2,4,5,7,9,11];
+const BLACK_SLOTS=[1,3,null,6,8,10,null];
+const KB_WHITE={a:0,s:1,d:2,f:3,g:4,h:5,j:6,k:7};
+const KB_BLACK={w:0,e:1,t:3,y:4,u:5};
+let kbOctave=3;
+const KB_OCT_MIN=1,KB_OCT_MAX=6,KB_SLOT_H=18;
+
+function startNote(n,vel=0.7){
+  if(activeVoices.has(n))return;
+  const c=getCtx();
+  const voice=buildDriftVoice(c,midiToFreq(n),vel,c.currentTime);
+  activeVoices.set(n,voice);
+  const nm=NOTE_NAMES[n%12];
+  document.getElementById('note-name').textContent=nm;
+  document.getElementById('freq-display').textContent=midiToFreq(n).toFixed(1)+' Hz';
+  document.getElementById('hs-note').textContent=nm+(Math.floor(n/12)-1);
+  document.getElementById('hs-note').className='lit';
+  document.getElementById('power-dot').classList.add('on');
+  document.getElementById('hs-voices').textContent=holdNodes.size+activeVoices.size;
+}
+function stopNote(n){
+  const v=activeVoices.get(n);if(!v)return;
+  const c=actx;const now=c.currentTime;
+  v.master.gain.setTargetAtTime(0,now,0.5);
+  v.lpf.frequency.exponentialRampToValueAtTime(150,now+1.0);
+  setTimeout(()=>{v.nodes.forEach(nd=>{try{nd.stop()}catch(e){}});try{v.master.disconnect();v.lpf.disconnect();v.dry.disconnect();v.wet.disconnect();}catch(e){}},4000);
+  activeVoices.delete(n);
+  document.getElementById('hs-voices').textContent=holdNodes.size+activeVoices.size;
+  if(activeVoices.size===0&&holdNodes.size===0){document.getElementById('power-dot').classList.remove('on');}
+}
+
+function buildKB(){
+  const el=document.getElementById('keyboard');el.innerHTML='';
+  const base=kbOctave*12+12;
+  for(let i=0;i<8;i++){
+    const n=base+WHITE_KEYS[i%7];
+    const wk=document.createElement('div');wk.className='key white';wk.dataset.note=n;
+    wk.innerHTML=`<span class="key-lbl">${['A','S','D','F','G','H','J','K'][i]}</span>`;
+    el.appendChild(wk);
+  }
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.key.white').forEach((wk,i)=>{
+      const slot=BLACK_SLOTS[i%7];if(slot==null)return;
+      const n=base+slot;
+      const bk=document.createElement('div');bk.className='key black';bk.dataset.note=n;
+      bk.style.left=(wk.offsetLeft+wk.offsetWidth*0.6)+'px';
+      const lbls=['W','E','','T','Y','U',''];
+      if(lbls[i])bk.innerHTML=`<span class="key-lbl">${lbls[i]}</span>`;
+      el.appendChild(bk);
+    });
+    el.querySelectorAll('.key').forEach(k=>{
+      const n=parseInt(k.dataset.note);
+      k.addEventListener('mousedown', e=>{e.preventDefault();getCtx();startNote(n);k.classList.add('active');});
+      k.addEventListener('mouseup',   ()=>{stopNote(n);k.classList.remove('active');});
+      k.addEventListener('mouseleave',()=>{if(activeVoices.has(n)){stopNote(n);k.classList.remove('active');}});
+      k.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();getCtx();startNote(n);k.classList.add('active');},{passive:false});
+      k.addEventListener('touchend',  e=>{e.preventDefault();stopNote(n);k.classList.remove('active');},{passive:false});
+    });
+  });
+}
+function buildOctWheel(){
+  const inner=document.getElementById('oct-wheel-inner');inner.innerHTML='';
+  for(let o=KB_OCT_MAX;o>=KB_OCT_MIN;o--){
+    const s=document.createElement('div');
+    s.className='ow-slot'+(o===kbOctave?' cur':'');
+    s.textContent='C'+o;s.dataset.oct=o;inner.appendChild(s);
+  }
+  scrollOW();
+}
+function scrollOW(){
+  const inner=document.getElementById('oct-wheel-inner');
+  const wH=document.getElementById('oct-wheel').clientHeight||80;
+  inner.style.transform=`translateY(${wH/2-KB_SLOT_H/2-(KB_OCT_MAX-kbOctave)*KB_SLOT_H}px)`;
+  inner.querySelectorAll('.ow-slot').forEach(s=>s.classList.toggle('cur',parseInt(s.dataset.oct)===kbOctave));
+}
+(function(){
+  const wheel=document.getElementById('oct-wheel');let sy=null,so=null;
+  wheel.addEventListener('mousedown',e=>{sy=e.clientY;so=kbOctave;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{if(sy===null)return;const d=Math.round((sy-e.clientY)/KB_SLOT_H);const n=Math.max(KB_OCT_MIN,Math.min(KB_OCT_MAX,so+d));if(n!==kbOctave){kbOctave=n;scrollOW();buildKB();}});
+  document.addEventListener('mouseup',()=>{sy=null;});
+  wheel.addEventListener('wheel',e=>{e.preventDefault();kbOctave=Math.max(KB_OCT_MIN,Math.min(KB_OCT_MAX,kbOctave+(e.deltaY>0?-1:1)));scrollOW();buildKB();},{passive:false});
+  wheel.addEventListener('click',e=>{const s=e.target.closest('.ow-slot');if(s){kbOctave=parseInt(s.dataset.oct);scrollOW();buildKB();}});
+})();
+
+const KB_PADS={q:null,w:null,e:null,r:null,a:null,s:null,d:null,f:null,z:null,x:null,c:null,v:null};
+document.querySelectorAll('.dpad').forEach(p=>{ KB_PADS[p.dataset.key]=p; });
+
+document.addEventListener('keydown',e=>{
+  if(e.repeat||e.target.tagName==='INPUT')return;
+  const key=e.key.toLowerCase();
+  if(KB_PADS[key]){getCtx();triggerPad(KB_PADS[key],0.65+Math.random()*0.35);return;}
+  if(key==='z'&&!KB_PADS['z']){kbOctave=Math.max(KB_OCT_MIN,kbOctave-1);scrollOW();buildKB();return;}
+  const base=kbOctave*12+12;let n=null;
+  if(KB_WHITE[key]!==undefined)n=base+WHITE_KEYS[KB_WHITE[key]];
+  else if(KB_BLACK[key]!==undefined){const sl=BLACK_SLOTS[KB_BLACK[key]];if(sl!=null)n=base+sl;}
+  if(n!==null&&!activeVoices.has(n)){
+    getCtx();startNote(n);
+    document.getElementById('keyboard')?.querySelectorAll('.key').forEach(k=>{if(parseInt(k.dataset.note)===n)k.classList.add('active');});
+  }
+});
+document.addEventListener('keyup',e=>{
+  const key=e.key.toLowerCase();const base=kbOctave*12+12;let n=null;
+  if(KB_WHITE[key]!==undefined)n=base+WHITE_KEYS[KB_WHITE[key]];
+  else if(KB_BLACK[key]!==undefined){const sl=BLACK_SLOTS[KB_BLACK[key]];if(sl!=null)n=base+sl;}
+  if(n!==null){stopNote(n);document.getElementById('keyboard')?.querySelectorAll('.key').forEach(k=>{if(parseInt(k.dataset.note)===n)k.classList.remove('active');});}
+});
+
+// ── MODE / CHOIR BUTTONS ──
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');P.mode=btn.dataset.mode;
+    document.getElementById('drift-display').textContent=MODE_QUOTES[P.mode];
+  });
+});
+document.querySelectorAll('.choir-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.choir-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');P.choirType=btn.dataset.choir;
+  });
+});
+
+// ── KNOBS ──
+function setupKnobs(){
+  document.querySelectorAll('canvas.knob').forEach(canvas=>{
+    const id=canvas.id,min=parseFloat(canvas.dataset.min),max=parseFloat(canvas.dataset.max);
+    let val=parseFloat(canvas.dataset.val);
+    const color=canvas.dataset.color||'#a060ff';
+    const valEl=document.getElementById('v-'+id.replace('k-',''));
+    function draw(){
+      const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,r=w*0.38;
+      ctx.clearRect(0,0,w,h);
+      const sA=Math.PI*0.75,eA=Math.PI*2.25,t=(val-min)/(max-min),cA=sA+t*(eA-sA);
+      ctx.beginPath();ctx.arc(cx,cy,r,sA,eA);ctx.strokeStyle='#2a2438';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,r,sA,cA);ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+      const dx=cx+r*Math.cos(cA),dy=cy+r*Math.sin(cA);
+      ctx.beginPath();ctx.arc(dx,dy,2.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fillStyle='#1e1830';ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,1.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    }
+    let dragY=null,dragVal=null;
+    canvas.addEventListener('mousedown',e=>{dragY=e.clientY;dragVal=val;e.preventDefault();});
+    document.addEventListener('mousemove',e=>{if(dragY===null)return;val=Math.max(min,Math.min(max,dragVal+(dragY-e.clientY)*(max-min)/120));draw();onKnob(id,val,valEl);});
+    document.addEventListener('mouseup',()=>{dragY=null;});
+    draw();onKnob(id,val,valEl);
+  });
+}
+function onKnob(id,val,el){
+  const map={
+    'k-reverb': v=>{P.reverb=v;   el.textContent=v.toFixed(2);},
+    'k-tape':   v=>{P.tape=v;     el.textContent=v.toFixed(2);},
+    'k-detune': v=>{P.detune=v;   el.textContent=Math.round(v);},
+    'k-attack': v=>{P.attack=v;   el.textContent=v.toFixed(2);},
+    'k-choir':  v=>{P.choir=v;    el.textContent=v.toFixed(2);},
+  };
+  if(map[id])map[id](val);
+}
+
+// ── CHOIR VISUALIZER ──
+const choirCanvas=document.getElementById('choir-canvas');
+const cCtx=choirCanvas.getContext('2d');
+let choirT=0;
+function resizeChoir(){choirCanvas.width=choirCanvas.offsetWidth;choirCanvas.height=choirCanvas.offsetHeight;}
+function drawChoir(){
+  requestAnimationFrame(drawChoir);
+  const W=choirCanvas.width,H=choirCanvas.height;
+  cCtx.clearRect(0,0,W,H);
+  if(!analyser)return;
+  choirT+=0.012;
+  const buf=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(buf);
+  // Draw formant bars as vertical glowing lines — choir-like
+  const numBars=48;
+  const barW=W/numBars;
+  for(let i=0;i<numBars;i++){
+    const val=buf[Math.floor(i*buf.length/numBars)]/255;
+    const h=val*H*0.9;
+    const phase=Math.sin(choirT*1.2+i*0.3)*0.15;
+    const alpha=val*(0.5+phase);
+    const hue=260+i*3; // purple to pink sweep
+    cCtx.fillStyle=`hsla(${hue},70%,70%,${alpha})`;
+    cCtx.fillRect(i*barW+1, H-h, barW-2, h);
+  }
+  // Tape flutter indicator
+  tapeFlutterPhase+=0.08;
+  const flutter=Math.sin(tapeFlutterPhase*7)*Math.sin(tapeFlutterPhase*1.3);
+  const ftEl=document.getElementById('tape-flutter');
+  if(Math.abs(flutter)>0.6&&(holdNodes.size>0||activeVoices.size>0)){
+    ftEl.classList.add('on');
+    ftEl.textContent=`tape ${flutter>0?'▲':'▼'}`;
+    document.getElementById('hs-tape').textContent=(flutter*P.tape*100).toFixed(0)+'¢';
+    document.getElementById('hs-tape').className='lit-tape';
+  } else {
+    ftEl.classList.remove('on');
+    ftEl.textContent='tape ·';
+  }
+}
+
+// ── WAVEFORM ──
+const waveCanvas=document.getElementById('wave-canvas');
+const wCtx=waveCanvas.getContext('2d');
+function resizeWave(){waveCanvas.width=waveCanvas.offsetWidth;waveCanvas.height=waveCanvas.offsetHeight;}
+function drawWave(){
+  requestAnimationFrame(drawWave);
+  const W=waveCanvas.width,H=waveCanvas.height;
+  wCtx.clearRect(0,0,W,H);
+  if(!analyser)return;
+  const buf=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteTimeDomainData(buf);
+  const grad=wCtx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'rgba(160,96,255,.55)');
+  grad.addColorStop(0.5,'rgba(200,152,255,.5)');
+  grad.addColorStop(1,'rgba(255,48,96,.45)');
+  wCtx.strokeStyle=grad;wCtx.lineWidth=1.2;
+  wCtx.shadowColor='#a060ff';wCtx.shadowBlur=5;
+  wCtx.beginPath();
+  const step=W/buf.length;
+  for(let i=0;i<buf.length;i++){const x=i*step,y=(buf[i]/128-1)*(H*0.42)+H/2;i===0?wCtx.moveTo(x,y):wCtx.lineTo(x,y);}
+  wCtx.stroke();wCtx.shadowBlur=0;
+}
+
+// ── ATMOSPHERE: fog wisps drifting ──
+const atmosCanvas=document.getElementById('atmos');
+const aCtx=atmosCanvas.getContext('2d');
+let fogParticles=[];
+function initAtmos(){
+  atmosCanvas.width=window.innerWidth;atmosCanvas.height=window.innerHeight;
+  fogParticles=Array.from({length:18},()=>({
+    x:Math.random()*atmosCanvas.width,
+    y:Math.random()*atmosCanvas.height,
+    rx:Math.random()*120+60,
+    ry:Math.random()*30+12,
+    sp:Math.random()*0.08+0.01,
+    o:Math.random()*0.05+0.008,
+    t:Math.random()*Math.PI*2,
+    hue:Math.random()>0.5?260:300,
+  }));
+}
+function drawAtmos(){
+  requestAnimationFrame(drawAtmos);
+  aCtx.clearRect(0,0,atmosCanvas.width,atmosCanvas.height);
+  fogParticles.forEach(p=>{
+    p.t+=p.sp*0.016;
+    p.x+=Math.sin(p.t*0.4)*0.4;
+    p.y+=Math.cos(p.t*0.25)*0.15;
+    if(p.x>atmosCanvas.width+p.rx)p.x=-p.rx;
+    if(p.x<-p.rx)p.x=atmosCanvas.width+p.rx;
+    const flicker=p.o*(0.7+0.3*Math.sin(p.t*1.8));
+    aCtx.beginPath();
+    aCtx.ellipse(p.x,p.y,p.rx,p.ry,0,0,Math.PI*2);
+    aCtx.fillStyle=`hsla(${p.hue},60%,60%,${flicker})`;
+    aCtx.fill();
+  });
+}
+
+// ── CURSOR ──
+const cursor=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';});
+
+window.addEventListener('resize',()=>{resizeWave();resizeChoir();initAtmos();buildKB();});
+
+setupKnobs();
+resizeWave();
+resizeChoir();
+initAtmos();
+drawAtmos();
+drawWave();
+drawChoir();
+buildKB();
+buildOctWheel();
+document.getElementById('drift-display').textContent=MODE_QUOTES[P.mode];
+</script>
+</body>
+</html>
